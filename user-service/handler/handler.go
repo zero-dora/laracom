@@ -49,7 +49,7 @@ func (srv *UserService) CreateUser(ctx context.Context, req *pb.User, res *pb.Re
 	return nil
 }
 
-func (srv *UserService) Auth(ctx context.Context, req *pb.User, res *pb.Response) error {
+func (srv *UserService) Auth(ctx context.Context, req *pb.User, res *pb.Token) error {
 	log.Println("Logging in with:", req.Email, req.Password)
 
 	// 获取用户信息
