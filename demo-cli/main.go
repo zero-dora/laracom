@@ -1,10 +1,11 @@
 package main
 
 import (
-	pb "laracom/demo-service/proto/demo"
-	"log"
 	"context"
+	"log"
+
 	"github.com/micro/go-micro"
+	pb "github.com/zero-dora/laracom/demo-service/proto/demo"
 )
 
 func main() {
@@ -12,12 +13,10 @@ func main() {
 	service.Init()
 
 	client := pb.NewDemoServiceClient("laracom.demo.service", service.Client())
-
-	rep, err := client.SayHello(context.TODO()), &pb.DemoRequest{Name: "zero"})
-
+	rsp, err := client.SayHello(context.TODO(), &pb.DemoRequest{Name: "学院君"})
 	if err != nil {
 		log.Fatalf("服务调用失败：%v", err)
+		return
 	}
-
 	log.Println(rsp.Text)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	pb "laracom/demo-service/proto/demo"
+	pb "github.com/zero-dora/laracom/demo-service/proto/demo"
 
 	"github.com/micro/go-micro"
 )
