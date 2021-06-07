@@ -6,12 +6,14 @@ import (
 
 	pb "github.com/zero-dora/laracom/user-service/proto/user"
 	"github.com/zero-dora/laracom/user-service/repo"
+	"github.com/zero-dora/laracom/user-service/service"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/net/context"
 )
 
 type UserService struct {
-	Repo repo.Repository
+	Repo  repo.Repository
+	Token service.Authable
 }
 
 func (srv *UserService) Get(ctx context.Context, req *pb.User, res *pb.Response) error {
