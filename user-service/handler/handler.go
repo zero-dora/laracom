@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"errors"
+	"log"
+
 	pb "github.com/zero-dora/laracom/user-service/proto/user"
 	"github.com/zero-dora/laracom/user-service/repo"
 	"golang.org/x/crypto/bcrypt"
@@ -41,5 +44,47 @@ func (srv *UserService) CreateUser(ctx context.Context, req *pb.User, res *pb.Re
 		return err
 	}
 	res.User = req
+	return nil
+}
+
+func (srv *UserService) Auth(ctx context.Context, req *pb.User, res *pb.Response) error {
+	log.Println("Logging in with:", req.Email, req.Password)
+
+	// 获取用户信息
+	user, err := srv.Repo.GetByEmail(req.Email)
+	log.Println(user)
+	if err != nil {
+		return err
+	}
+
+	// 校验用户输入密码是否于数据库存储密码匹配
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		return err
+	}
+
+	// 生成 jwt token
+	token, err := srv.Token.Encode(user)
+	if err != nil {
+		return err
+	}
+	res.Token = token
+	return nil
+}
+
+func (srv *UserService) ValidateToken(ctx context.Context, req *pb.Token, res *pb.Token) error {
+
+	// 校验用户亲求中的token信息是否有效
+	claims, err := srv.Token.Decode(req.Token)
+
+	if err != nil {
+		return err
+	}
+
+	if claims.User.Id == "" {
+		return errors.New("无效的用户")
+	}
+
+	res.Valid = true
+
 	return nil
 }
