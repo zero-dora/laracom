@@ -17,8 +17,7 @@ type UserRepository struct {
 }
 
 func (repo *UserRepository) Create(user *pb.User) error {
-	err := repo.Db.Create(user).Error
-	if err != nil {
+	if err := repo.Db.Create(user).Error; err != nil {
 		return err
 	}
 	return nil
@@ -27,8 +26,7 @@ func (repo *UserRepository) Create(user *pb.User) error {
 func (repo *UserRepository) Get(id string) (*pb.User, error) {
 	var user *pb.User
 	user.Id = id
-	err := repo.Db.First(&user).Error
-	if err != nil {
+	if err := repo.Db.First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -36,8 +34,8 @@ func (repo *UserRepository) Get(id string) (*pb.User, error) {
 
 func (repo *UserRepository) GetByEmail(email string) (*pb.User, error) {
 	user := &pb.User{}
-	err := repo.Db.Where("email = ?", email).First(&user).Error
-	if err != nil {
+	if err := repo.Db.Where("email = ?", email).
+		First(&user).Error; err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -45,8 +43,7 @@ func (repo *UserRepository) GetByEmail(email string) (*pb.User, error) {
 
 func (repo *UserRepository) GetAll() ([]*pb.User, error) {
 	var users []*pb.User
-	err := repo.Db.Find(&users).Error
-	if err != nil {
+	if err := repo.Db.Find(&users).Error; err != nil {
 		return nil, err
 	}
 	return users, nil
