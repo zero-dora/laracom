@@ -11,7 +11,7 @@ type UserService struct {
 	Repo repo.Repository
 }
 
-func (srv *UserService) Get(ctx context.Context, req *pb.Request, res *pb.Response) error {
+func (srv *UserService) Get(ctx context.Context, req *pb.User, res *pb.Response) error {
 	user, err := srv.Repo.Get(req.Id)
 	if err != nil {
 		return err
@@ -32,7 +32,7 @@ func (srv *UserService) GetAll(ctx context.Context, req *pb.Request, res *pb.Res
 	return nil
 }
 
-func (srv *UserService) Create(ctx context.Context, req *pb.Request, res *pb.Response) error {
+func (srv *UserService) Create(ctx context.Context, req *pb.User, res *pb.Response) error {
 	// 对密码进行哈希加密
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {

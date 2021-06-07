@@ -25,7 +25,7 @@ func main() {
 	db.AutoMigrate(&pb.User{})
 
 	// 初始化 Repo 实例用于后续数据库操作
-	repo := &repository.UserRepository
+	repo := &repository.UserRepository{db}
 
 	// 以下是 Micro 创建微服务流程
 	srv := micro.NewService(

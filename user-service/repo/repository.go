@@ -29,7 +29,7 @@ func (repo *UserRepository) Get(id string) (*pb.User, error) {
 	user.Id = id
 	err := repo.Db.First(&user).Error
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return user, nil
 }
