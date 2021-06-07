@@ -2,7 +2,7 @@ syntax = "proto3";
 package laracom.user.service;
 
 service UserService{
-    rpc Create(User) returns (Response) {}
+    rpc CreateUser(User) returns (Response) {}
     rpc Get(User) returns (Response){}
     rpc GetAll(Request) returns (Response) {}
 } 

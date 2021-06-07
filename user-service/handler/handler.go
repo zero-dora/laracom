@@ -29,7 +29,7 @@ func (srv *UserService) GetAll(ctx context.Context, req *pb.Request, res *pb.Res
 	return nil
 }
 
-func (srv *UserService) Create(ctx context.Context, req *pb.User, res *pb.Response) error {
+func (srv *UserService) CreateUser(ctx context.Context, req *pb.User, res *pb.Response) error {
 
 	// 对密码进行哈希加密
 	hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -37,7 +37,7 @@ func (srv *UserService) Create(ctx context.Context, req *pb.User, res *pb.Respon
 		return err
 	}
 	req.Password = string(hashedPass)
-	if err := srv.Repo.Create(req); err != nil {
+	if err := srv.Repo.CreateUser(req); err != nil {
 		return err
 	}
 	res.User = req

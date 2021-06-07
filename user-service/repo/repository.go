@@ -6,7 +6,7 @@ import (
 )
 
 type Repository interface {
-	Create(user *pb.User) error
+	CreateUser(user *pb.User) error
 	Get(id string) (*pb.User, error)
 	GetByEmail(email string) (*pb.User, error)
 	GetAll() ([]*pb.User, error)
@@ -16,7 +16,7 @@ type UserRepository struct {
 	Db *gorm.DB
 }
 
-func (repo *UserRepository) Create(user *pb.User) error {
+func (repo *UserRepository) CreateUser(user *pb.User) error {
 	if err := repo.Db.Create(user).Error; err != nil {
 		return err
 	}
