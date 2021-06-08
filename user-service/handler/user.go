@@ -100,7 +100,7 @@ func (srv *UserService) ValidateToken(ctx context.Context, req *pb.Token, res *p
 	return nil
 }
 
-func (srv *UserService) Update(ctx context.Context, req *pb.User, res *pb.Response) error {
+func (srv *UserService) UpdateUser(ctx context.Context, req *pb.User, res *pb.Response) error {
 
 	if req.Id == "" {
 		return errors.New("用户 ID 不能为空")
@@ -115,7 +115,7 @@ func (srv *UserService) Update(ctx context.Context, req *pb.User, res *pb.Respon
 		req.Password = string(hashedPass)
 	}
 
-	if err := srv.Repo.Update(req); err != nil {
+	if err := srv.Repo.UpdateUser(req); err != nil {
 		return err
 	}
 	res.User = req
@@ -149,5 +149,20 @@ func (srv *UserService) ValidatePasswordResetToken(ctx context.Context, req *pb.
 	} else {
 		res.Valid = true
 	}
+	return nil
+}
+
+func (srv *UserService) DeletePasswordReset(ctx context.Context, req *pb.PasswordReset, res *pb.PasswordResetResponse) error {
+	if req.Email == "" {
+		return errors.New("邮箱不能为空")
+	}
+	reset, err := srv.ResetRepo.GetByEmail(req.Email)
+	if err != nil {
+		return errors.New("数据库查询出错")
+	}
+	if err := srv.ResetRepo.DeleteReset(reset); err != nil {
+		return err
+	}
+	res.PasswordReset = nil
 	return nil
 }

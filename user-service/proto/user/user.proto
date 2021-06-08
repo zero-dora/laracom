@@ -7,9 +7,10 @@ service UserService{
     rpc GetAll(Request) returns (Response) {}
     rpc Auth(User) returns (Token) {}
     rpc ValidateToken(Token) returns (Token) {}
-    rpc Update(User) returns (Response) {}
+    rpc UpdateUser(User) returns (Response) {}
     rpc CreatePasswordReset(PasswordReset) returns (PasswordResetResponse) {}
     rpc ValidatePasswordResetToken(Token) returns (Token) {}
+    rpc DeletePasswordReset(PasswordReset) returns (PasswordResetResponse) {}
 } 
 
 message User{
