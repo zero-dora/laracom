@@ -1,5 +1,5 @@
 syntax = "proto3";
-package laracom.user.service;
+package laracom.service.user;
 
 service UserService{
     rpc CreateUser(User) returns (Response) {}
