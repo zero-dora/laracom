@@ -1,10 +1,11 @@
 package service
 
 import (
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	pb "github.com/zero-dora/laracom/user-service/proto/user"
 	"github.com/zero-dora/laracom/user-service/repo"
-	"time"
 )
 
 var (
@@ -26,10 +27,13 @@ type TokenService struct {
 }
 
 func (srv *TokenService) Decode(tokenString string) (*CustomClaims, error) {
+
+	// Parse the token
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return key, nil
 	})
 
+	// Validate the token and return the custom claims
 	if claims, ok := token.Claims.(*CustomClaims); ok && token.Valid {
 		return claims, nil
 	} else {
