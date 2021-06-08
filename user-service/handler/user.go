@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/jinzhu/gorm"
 	pb "github.com/zero-dora/laracom/user-service/proto/user"
 	"github.com/zero-dora/laracom/user-service/repo"
 	"github.com/zero-dora/laracom/user-service/service"
@@ -12,15 +13,24 @@ import (
 )
 
 type UserService struct {
-	Repo  repo.Repository
-	Token service.Authable
+	Repo      repo.Repository
+	Token     service.Authable
+	ResetRepo repo.PasswordResetInterface
 }
 
 func (srv *UserService) Get(ctx context.Context, req *pb.User, res *pb.Response) error {
-	user, err := srv.Repo.Get(req.Id)
-	if err != nil {
+	var user *pb.User
+	var err error
+	if req.Id != "" {
+		user, err = srv.Repo.Get(req.Id)
+	} else if req.Email != "" {
+		user, err = srv.Repo.GetByEmail(req.Email)
+	}
+
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
+
 	res.User = user
 	return nil
 }
@@ -87,5 +97,57 @@ func (srv *UserService) ValidateToken(ctx context.Context, req *pb.Token, res *p
 
 	res.Valid = true
 
+	return nil
+}
+
+func (srv *UserService) Update(ctx context.Context, req *pb.User, res *pb.Response) error {
+
+	if req.Id == "" {
+		return errors.New("用户 ID 不能为空")
+	}
+
+	if req.Password != "" {
+		// 如果密码字段不为空的话对密码进行哈希加密
+		hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		req.Password = string(hashedPass)
+	}
+
+	if err := srv.Repo.Update(req); err != nil {
+		return err
+	}
+	res.User = req
+	return nil
+}
+
+func (srv *UserService) CreatePasswordReset(ctx context.Context, req *pb.PasswordReset, res *pb.PasswordResetResponse) error {
+	if req.Email == "" {
+		return errors.New("邮箱不能为空")
+	}
+	if err := srv.ResetRepo.CreateReset(req); err != nil {
+		return err
+	}
+	res.PasswordReset = req
+	return nil
+}
+
+func (srv *UserService) ValidatePasswordResetToken(ctx context.Context, req *pb.Token, res *pb.Token) error {
+	// 校验用户亲求中的token信息是否有效
+	if req.Token == "" {
+		return errors.New("Token信息不能为空")
+	}
+
+	_, err := srv.ResetRepo.GetByToken(req.Token)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return errors.New("数据库查询异常")
+	}
+
+	if err == gorm.ErrRecordNotFound {
+		res.Valid = false
+	} else {
+		res.Valid = true
+	}
 	return nil
 }
