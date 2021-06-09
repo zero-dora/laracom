@@ -9,6 +9,7 @@ services:
     laracom-user-service:
         depends_on:
             - laracom-user-db
+            - laracom-nats
         build: ./user-service
         ports:
             - 9092:9091
@@ -23,12 +24,12 @@ services:
             DB_PASSWORD: "test"
         networks:
             - microservice
-    laracom-user-cli:
-        build: ./user-cli
-        environment:
-            MICRO_REGISTRY: "mdns"
-        networks:
-            - microservice
+    # laracom-user-cli:
+    #     build: ./user-cli
+    #     environment:
+    #         MICRO_REGISTRY: "mdns"
+    #     networks:
+    #         - microservice
 
     laracom-micro-api:
         image: microhq/micro:latest

@@ -32,17 +32,17 @@ func main() {
 	repo := &repository.UserRepository{db}
 	resetRepo := &repository.PasswordResetRepository{db}
 
-	// 初始化 token service
-	token := &service.TokenService{repo}
-
-	//获取 Broker 实例
-	pubSub := srv.Server().Option().Broker
-
 	// 以下是 Micro 创建微服务流程
 	srv := micro.NewService(
 		micro.Name("laracom.service.user"),
 		micro.Version("latest"), // 新增接口版本参数
 	)
+
+	// 初始化 token service
+	token := &service.TokenService{repo}
+
+	//获取 Broker 实例
+	pubSub := srv.Server().Options().Broker
 
 	srv.Init()
 
