@@ -1,10 +1,14 @@
 package handler
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"strconv"
 
 	"github.com/jinzhu/gorm"
+	"github.com/micro/go-micro/broker"
+	"github.com/zero-dora/laracom/user-service/model"
 	pb "github.com/zero-dora/laracom/user-service/proto/user"
 	"github.com/zero-dora/laracom/user-service/repo"
 	"github.com/zero-dora/laracom/user-service/service"
@@ -12,26 +16,32 @@ import (
 	"golang.org/x/net/context"
 )
 
+const topic = "password.reset"
+
 type UserService struct {
 	Repo      repo.Repository
 	Token     service.Authable
 	ResetRepo repo.PasswordResetInterface
+	PubSub    broker.Broker
 }
 
 func (srv *UserService) Get(ctx context.Context, req *pb.User, res *pb.Response) error {
-	var user *pb.User
+	var userModel *model.User
 	var err error
 	if req.Id != "" {
-		user, err = srv.Repo.Get(req.Id)
+		id, _ := strconv.ParseUint(req.Id, 10, 64)
+		userModel, err = srv.Repo.Get(uint(id))
 	} else if req.Email != "" {
-		user, err = srv.Repo.GetByEmail(req.Email)
+		userModel, err = srv.Repo.GetByEmail(req.Email)
 	}
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
+	if userModel != nil {
+		res.User, _ = userModel.ToProtobuf()
+	}
 
-	res.User = user
 	return nil
 }
 
@@ -40,7 +50,13 @@ func (srv *UserService) GetAll(ctx context.Context, req *pb.Request, res *pb.Res
 	if err != nil {
 		return err
 	}
-	res.Users = users
+
+	userItems := make([]*pb.User, len(users))
+	for index, user := range users {
+		userItem, _ := user.ToProtobuf()
+		userItems[index] = userItem
+	}
+	res.Users = userItems
 	return nil
 }
 
@@ -52,10 +68,35 @@ func (srv *UserService) CreateUser(ctx context.Context, req *pb.User, res *pb.Re
 		return err
 	}
 	req.Password = string(hashedPass)
-	if err := srv.Repo.CreateUser(req); err != nil {
+	userModel := &model.User{}
+	user, _ := userModel.ToORM(req)
+	if err := srv.Repo.CreateUser(user); err != nil {
 		return err
 	}
-	res.User = req
+	res.User, _ = user.ToProtobuf()
+	return nil
+}
+
+func (srv *UserService) UpdateUser(ctx context.Context, req *pb.User, res *pb.Response) error {
+
+	if req.Id == "" {
+		return errors.New("用户 ID 不能为空")
+	}
+
+	if req.Password != "" {
+		// 如果密码字段不为空的话对密码进行哈希加密
+		hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		req.Password = string(hashedPass)
+	}
+	id, _ := strconv.ParseUint(req.Id, 10, 64)
+	user, _ := srv.Repo.Get(uint(id))
+	if err := srv.Repo.UpdateUser(user); err != nil {
+		return err
+	}
+	res.User, _ = user.ToProtobuf()
 	return nil
 }
 
@@ -91,7 +132,7 @@ func (srv *UserService) ValidateToken(ctx context.Context, req *pb.Token, res *p
 		return err
 	}
 
-	if claims.User.Id == "" {
+	if claims.User.ID == 0 {
 		return errors.New("无效的用户")
 	}
 
@@ -100,36 +141,21 @@ func (srv *UserService) ValidateToken(ctx context.Context, req *pb.Token, res *p
 	return nil
 }
 
-func (srv *UserService) UpdateUser(ctx context.Context, req *pb.User, res *pb.Response) error {
-
-	if req.Id == "" {
-		return errors.New("用户 ID 不能为空")
-	}
-
-	if req.Password != "" {
-		// 如果密码字段不为空的话对密码进行哈希加密
-		hashedPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		req.Password = string(hashedPass)
-	}
-
-	if err := srv.Repo.UpdateUser(req); err != nil {
-		return err
-	}
-	res.User = req
-	return nil
-}
-
 func (srv *UserService) CreatePasswordReset(ctx context.Context, req *pb.PasswordReset, res *pb.PasswordResetResponse) error {
 	if req.Email == "" {
 		return errors.New("邮箱不能为空")
 	}
-	if err := srv.ResetRepo.CreateReset(req); err != nil {
+	resetModel := new(model.PasswordReset)
+	passwordReset, _ := resetModel.ToORM(req)
+	if err := srv.ResetRepo.CreateReset(passwordReset); err != nil {
 		return err
 	}
-	res.PasswordReset = req
+	if passwordReset != nil {
+		res.PasswordReset, _ = passwordReset.ToProtobuf()
+		if err := srv.publishEvent(res.PasswordReset); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -164,5 +190,28 @@ func (srv *UserService) DeletePasswordReset(ctx context.Context, req *pb.Passwor
 		return err
 	}
 	res.PasswordReset = nil
+	return nil
+}
+
+func (srv *UserService) publishEvent(reset *pb.PasswordReset) error {
+	// JSON 编码
+	body, err := json.Marshal(reset)
+	if err != nil {
+		return err
+	}
+
+	// 构建 broker 消息
+	msg := &broker.Message{
+		Header: map[string]string{
+			"email": reset.Email,
+		},
+		Body: body,
+	}
+
+	// 通过 broker 发布消息到消息系统
+	if err := srv.PubSub.Publish(topic, msg); err != nil {
+		log.Printf("[pub] failed: %v", err)
+	}
+
 	return nil
 }

@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	pb "github.com/zero-dora/laracom/user-service/proto/user"
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/zero-dora/laracom/user-service/model"
 	"github.com/zero-dora/laracom/user-service/repo"
 )
 
@@ -13,13 +13,13 @@ var (
 )
 
 type CustomClaims struct {
-	User *pb.User
+	User *model.User
 	jwt.StandardClaims
 }
 
 type Authable interface {
 	Decode(token string) (*CustomClaims, error)
-	Encode(user *pb.User) (string, error)
+	Encode(user *model.User) (string, error)
 }
 
 type TokenService struct {
@@ -41,7 +41,7 @@ func (srv *TokenService) Decode(tokenString string) (*CustomClaims, error) {
 	}
 }
 
-func (srv *TokenService) Encode(user *pb.User) (string, error) {
+func (srv *TokenService) Encode(user *model.User) (string, error) {
 
 	expireToken := time.Now().Add(time.Hour * 72).Unix()
 

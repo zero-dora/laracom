@@ -1,6 +1,10 @@
 # docker-compose.yml
 version: "3.3"
 
+networks:
+    microservice:
+      external: true
+      
 services: 
     laracom-user-service:
         depends_on:
@@ -11,15 +15,20 @@ services:
         environment:
             MICRO_SERVER_ADDRESS: ":9091"
             MICRO_REGISTRY: "mdns"
+            MICRO_BROKER: "nats"
+            MICRO_BROKER_ADDRESS: "laracom-nats:4222"
             DB_HOST: "laracom-user-db:3306"
             DB_NAME: "laracom_user"
             DB_USER: "test"
             DB_PASSWORD: "test"
-
+        networks:
+            - microservice
     laracom-user-cli:
         build: ./user-cli
         environment:
             MICRO_REGISTRY: "mdns"
+        networks:
+            - microservice
 
     laracom-micro-api:
         image: microhq/micro:latest
@@ -30,6 +39,8 @@ services:
         ports:
             - 8080:8080
         command: api --handler=rpc --namespace=laracom.service
+        networks:
+            - microservice
 
     laracom-user-db:
         image: mysql:5.7
@@ -44,6 +55,14 @@ services:
             MYSQL_PASSWORD: "test"
             MYSQL_DATABASE: "laracom_user"
             MYSQL_ROOT_PASSWORD: "root"
-
+        networks:
+            - microservice
+    laracom-nats:
+        image: nats:latest
+        ports:
+            - 4222:4222
+        restart: always
+        networks:
+            - microservice
 volumes:
     db_data: {}
