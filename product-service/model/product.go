@@ -81,6 +81,32 @@ func (model *Product) ToORM(req *pb.Product) (*Product, error) {
 	if req.MassUnit != "" {
 		model.MassUnit = req.MassUnit
 	}
+
+	return model, nil
+}
+
+func (model *Product) ToProtobuf() (*pb.Product, error) {
+	var product = &pb.Product{}
+	product.Id = uint32(model.ID)
+	product.BrandId = model.BrandId
+	product.Sku = model.Sku
+	product.Name = model.Name
+	product.Slug = model.Slug
+	product.Description = model.Description
+	product.Cover = model.Cover
+	product.Quantity = model.Quantity
+	product.Price = model.Price
+	product.SalePrice = model.SalePrice
+	product.Status = uint32(model.Status)
+	product.Length = model.Length
+	product.Width = model.Width
+	product.Height = model.Height
+	product.Weight = model.Weight
+	product.DistanceUnit = model.DistanceUnit
+	product.MassUnit = model.MassUnit
+	product.CreatedAt = model.CreatedAt.Format("2006-01-02 15:04:05")
+	product.UpdatedAt = model.UpdatedAt.Format("2006-01-02 15:04:05")
+
 	if model.Images != nil {
 		images := make([]*pb.ProductImage, len(model.Images))
 		for index, value := range model.Images {
@@ -108,29 +134,6 @@ func (model *Product) ToORM(req *pb.Product) (*Product, error) {
 		}
 		product.Attributes = attributes
 	}
-	return model, nil
-}
 
-func (model *Product) ToProtobuf() (*pb.Product, error) {
-	var product = &pb.Product{}
-	product.Id = uint32(model.ID)
-	product.BrandId = model.BrandId
-	product.Sku = model.Sku
-	product.Name = model.Name
-	product.Slug = model.Slug
-	product.Description = model.Description
-	product.Cover = model.Cover
-	product.Quantity = model.Quantity
-	product.Price = model.Price
-	product.SalePrice = model.SalePrice
-	product.Status = uint32(model.Status)
-	product.Length = model.Length
-	product.Width = model.Width
-	product.Height = model.Height
-	product.Weight = model.Weight
-	product.DistanceUnit = model.DistanceUnit
-	product.MassUnit = model.MassUnit
-	product.CreatedAt = model.CreatedAt.Format("2006-01-02 15:04:05")
-	product.UpdatedAt = model.UpdatedAt.Format("2006-01-02 15:04:05")
 	return product, nil
 }
